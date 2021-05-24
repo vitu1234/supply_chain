@@ -9,16 +9,21 @@
   </head>
   <body>
     <div class="s013">
-      <form>
-        <fieldset>
+      <form action="search_results.php" method="get">
+
+          <a class="" style="text-align:center;margin:20px;margin-bottom:30px;color:#ffff;" href="user/">Sign In!</a> / <a class="" style="text-align:center;margin:20px;margin-bottom:30px;color:#ffff;" href="user/">Sign Up! </a>
+        <fieldset style="margin-top: 30px">
+
+          <!-- <a href="user/">Sign In!</a>/<a href="user/">Sign Up! </a> -->
           <legend>WHAT ARE YOU LOOKING FOR?</legend>
+
         </fieldset>
         <div class="inner-form">
           <div class="left">
             <div class="input-wrap first">
               <div class="input-field first">
-                <label>WHAT</label>
-                <input type="text" placeholder="ex: Laptops, Car Spare Part, Stationery..." />
+                <label id="labelSearch">Searching...</label>
+                <input required name="query" id="searchArea" type="text" placeholder="ex: Laptops, Car Spare Part, Stationery..." />
               </div>
             </div>
 <!--
@@ -37,18 +42,30 @@
             </div>
 -->
           </div>
-          <button class="btn-search" type="button">SEARCH</button>
+          <button class="btn-search" id="searchBtn" type="submit">SEARCH</button>
         </div>
       </form>
-    </div>
-    <script src="js/extention/choices.js"></script>
-    <script>
-      const choices = new Choices('[data-trigger]',
-      {
-        searchEnabled: false,
-        itemSelectText: '',
-      });
+           
 
+ 
+    </div>
+      <script src="user/vendors/base/vendor.bundle.base.js"></script>
+      <script>
+       $(function(){
+           $("#labelSearch").hide();
+
+          })
+
+
+      $("#searchArea").keyup(function(){
+        
+        var searchdata = $("#searchArea").val();
+        if (searchdata !== '') {
+          $("#labelSearch").show();
+        }else{
+          $("#labelSearch").hide();
+        }
+      })
     </script>
   </body><!-- This templates was made by Colorlib (https://colorlib.com) -->
 </html>
