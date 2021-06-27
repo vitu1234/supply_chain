@@ -48,7 +48,7 @@ if(isset($_POST['email']) && isset($_POST['password']) && !empty($_POST['email']
     if ($qty <= $items['quantity_remaining']) {
 
         //make sure client id and company id is different
-        $getUser = $operation->retrieveSingle("SELECT *FROM user WHERE user_id = '$uid'");
+        $getUser = $operation->retrieveSingle("SELECT *FROM users WHERE user_id = '$uid'");
         //get company id 
         $getCompany = $operation->retrieveSingle("SELECT *FROM items WHERE item_id = '$item_id'");
         if ($getUser['company_id'] == $getCompany['company_id']) {

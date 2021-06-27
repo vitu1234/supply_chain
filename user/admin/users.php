@@ -60,7 +60,14 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
 
           <li class="nav-item nav-profile dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-              <img src="../images/faces/face5.jpg" alt="profile"/>
+                <?php
+                if ($getUser['img_url'] == '' || $getUser['img_url'] == NULL) {
+                  // code...
+                  echo ' <img src="../images/logo-mini.svg" alt="profile"/>';
+                }else{
+                  echo ' <img src="../images/'.$getUser['img_url'].'" alt="profile"/>';
+                }
+              ?>
               <span class="nav-profile-name"><?=$getUser['fullname']?></span>
             </a>
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
@@ -119,14 +126,14 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
               <div class="card">
                 <div class="card-body">
                   <h4 class="card-title text-center">All Users</h4>
-                    <button  href="#change-password" data-toggle="modal" type="button" class="btn btn-primary  float-right">Add User</button>
-                    <a  href="account_requests.php"  class="float-left">Account Requests</a>
+                    <button  href="#change-password" data-toggle="modal" type="button" class="btn btn-primary my-3 float-right">Add User</button>
+                   <!--  <a  href="account_requests.php"  class="float-left">Account Requests</a> -->
                   
                   <div class="table-responsive">
                     <?php
                       if ($countUsers > 0) {
                         ?>
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="user_tbl">
                           <thead>
                             <tr>
                               <th>User Name</th>
@@ -165,16 +172,8 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
                                   if ($row['user_role'] == "supplier") {
                                     $user_role = '   
                                     <select class="form-control" data-bv-field="fullName" id="euser_role'.$user_idc.'" name="euser_role" required>
-                                        <option value="admin">Admin</option>
+                                        
                                         <option selected value="supplier">Supplier</option>
-                                        <option value="accountant">Accountant</option>
-                                        <option value="secretary">Secretary</option>
-                                     </select>';
-                                  }elseif ($row['user_role'] == "admin") {
-                                     $user_role = '   
-                                    <select class="form-control" data-bv-field="fullName" id="euser_role'.$user_idc.'" name="euser_role" required>
-                                        <option selected value="admin">Admin</option>
-                                        <option value="supplier">Supplier</option>
                                         <option value="accountant">Accountant</option>
                                         <option value="secretary">Secretary</option>
                                      </select>';
@@ -355,7 +354,6 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
                     <label for="fullName">User role</label>
                      <select class="form-control" data-bv-field="fullName" id="user_role" name="user_role" required>
                         <option selected disabled>-select role-</option>
-                        <option value="admin">Admin</option>
                         <option value="supplier">Supplier</option>
                          <option value="accountant">Accountant</option>
                           <option value="secretary">Secretary</option>
@@ -472,9 +470,36 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
             </button>
           </div>
            <div class="modal-body p-4">
+            <div class="row">
+              <div class="col-12">
+                 <?php
+                 $btn = '';
+                  if ($getUser['img_url'] != '') {
+                    echo ' <img height="200px" width="200px" src="../images/'.$getUser['img_url'].'" alt="profile"/>';
+                    $btn = '<button id="btnPro" type="submit" class="btn btn-primary my-3"> Add Picture </button>';
+                  }else{
+                    $btn = '<button id="btnPro" type="submit" class="btn btn-primary my-3"> Change Picture </button>';
+                  }
+                ?>
 
+              </div>
+
+              <form enctype="multipart/form-data" id="profilePicForm" method="post">
+                 <div class="col-12 ">
+                   <input type="file" name="profFile" id="profFile" required class="form-control">
+                 </div>
+                 <input type="hidden" name="uidProf" id="uidProf" required="" value="<?=$user_id?>" >
+                  <div class="col-12 ">
+                    <?=$btn?>
+                  </div>
+
+              </form>
+             
+
+            </div>
             <form id="editUserProfileForm<?=$user_id?>" method="post">
               <div class="row">
+               
                 <div class="col-12 col-sm-6">
                   <div class="form-group">
                     <label for="firstName">Fullname</label>
@@ -513,7 +538,7 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
         </div>
         </div>
       </div>
-    </div>
+</div>
   <!-- plugins:js -->
   <script src="../vendors/base/vendor.bundle.base.js"></script>
   <!-- endinject -->
@@ -535,6 +560,7 @@ $getAllCompanies = $operation->retrieveMany("SELECT *FROM companies");
   <script src="../js/select2.min.js"></script>
    <script src="../vendors/alertifyjs/alertify.min.js"></script>
     <script src="js/js.js"></script>
+    <script src="../js/js.js"></script>
   <!-- End custom js for this page-->
 
   <script>

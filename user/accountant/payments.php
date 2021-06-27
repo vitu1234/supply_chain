@@ -16,6 +16,8 @@
 
   $countAllitemsSupply = $operation->countAll("SELECT * FROM `item_supplies` INNER JOIN users ON item_supplies.user_id = users.user_id WHERE users.company_id = '$company_id'"); 
 
+$clientTokenPayPal = $operation->retrieveSingle("SELECT * FROM `supplier_payment_details` WHERE company_id = '$company_id'");
+$countTokenPayPal = $operation->countAll("SELECT * FROM `supplier_payment_details` WHERE company_id = '$company_id'");
 
   $year = date("Y");
   $months = array(1,2,3,4,5,6,7,8,9,10,11,12);
@@ -89,6 +91,9 @@
     $totalSupplied +=$total; 
   }
 
+ $req_url = 'https://v6.exchangerate-api.com/v6/33324d2c592428071aaf4ddc/latest/MWK';
+ $response_json = file_get_contents($req_url);
+ $responses = json_decode($response_json);
 
 ?>
 <!DOCTYPE html>
@@ -132,7 +137,14 @@
 
           <li class="nav-item nav-profile dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
-              <img src="../images/faces/face5.jpg" alt="profile"/>
+              <?php
+                if ($getUser['img_url'] == '' || $getUser['img_url'] == NULL) {
+                  // code...
+                  echo ' <img src="../images/logo-mini.svg" alt="profile"/>';
+                }else{
+                  echo ' <img src="../images/'.$getUser['img_url'].'" alt="profile"/>';
+                }
+              ?>
               <span class="nav-profile-name"><?=$getUser['fullname']?></span>
             </a>
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
@@ -158,18 +170,23 @@
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
-            <a class="nav-link" href="index.html">
+            <a class="nav-link" href="index.php">
               <i class="mdi mdi-home menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="payments.html">
+            <a class="nav-link" href="payments.php">
               <i class="mdi mdi-square-inc-cash menu-icon"></i>
               <span class="menu-title">Payments</span>
             </a>
           </li>
-          
+                 <li class="nav-item">
+            <a class="nav-link" href="paid.php">
+              <i class="mdi mdi-square-inc-cash menu-icon"></i>
+              <span class="menu-title">Paid</span>
+            </a>
+          </li>
 <!--
           <li class="nav-item">
             <a class="nav-link" href="components.html">
@@ -197,7 +214,7 @@
                       <?php
                       if ($countAllitemsSupply > 0) {
                         ?>
-                        <table id="recent-purchases-listing" class="table">
+                        <table id="user_tbl" class="table">
                           <thead>
                             <tr>
                                <th>Supplier Name</th>
@@ -231,6 +248,8 @@
                           $getItemCompany = $operation->retrieveSingle("SELECT * FROM `items` INNER JOIN companies ON items.company_id = companies.company_id WHERE items.item_id = '$item_id'");
                           $Invoice = '';
 
+                          $productsRemaining = $getItemCompany['quantity_remaining'];
+
                           if ($operation->countAll("SELECT * FROM `invoices` WHERE item_supply_id = '$item_supply_'") > 0) {
                             $getInvoice = $operation->retrieveSingle("SELECT * FROM `invoices` WHERE item_supply_id = '$item_supply_'");
                             $Invoice = '
@@ -244,13 +263,25 @@
                             </div>';
                           }
 
+                         
+
+                           $base_price = $getItemCompany['price']*$row['quantity']; // Your price in USD
+                            $USD_price = round(($base_price * $responses->conversion_rates->USD), 2);
+                    
+
                           ?>
                           <tr>
                              <td><?=$getItemCompany['company_name']?></td>
                             <td><?=$getItemCompany['item_name']?></td>
                             <td><?=$status?></td>
                             <td><?=number_format($getItemCompany['price']*$row['quantity'],2)?></td>
-                            <td>   <a href="#view-company<?=$row['item_supply_id']?>" data-toggle="modal" class="btn btn-default"><i class="mdi mdi-eye"></i> View</a> </td>
+                            <td>   
+                              <?php
+                              echo '
+                              <a onclick="setAmount(\''.$USD_price.'\',\''.$row['item_supply_id'].'\')" href="#view-company'.$row['item_supply_id'].'" data-toggle="modal" class="btn btn-default"><i class="mdi mdi-eye"></i> View</a> ';
+
+                              ?>
+                              </td>
                         </tr>
 
                             <div id="view-company<?=$row['item_supply_id']?>" class="modal fade " role="dialog" aria-hidden="true">
@@ -287,7 +318,33 @@
                                       <div class="row">
                                         <?=$Invoice?>
                                           <div class="col-12 col-sm-6">
-                                            <p><a href="#" class="btn btn-primary mt-3">Pay with PayPal</a></p>
+                                              <?php
+                                              if ($row['quantity'] <= $productsRemaining) {
+                                                // code...
+                                              
+                                              if ($countTokenPayPal >0) {
+                                                // code...
+                                              
+                                                //.check if paid or not
+                                                if ($row['status'] >= 3) {
+                                                  // code...
+                                                  echo '<div style="display:none;" id="paypal-button-container"></div>';
+                                                }else{
+                                              ?>
+                                              <div id="paypal-button-container"></div>
+                                              <?php
+                                                }
+                                              }else{
+                                                echo "<p class='text-center alert alert-danger'>Payments available if PayPal client ID is added!</p>";
+                                              }
+                                            }else{
+
+                                              echo "<p class='text-center alert alert-danger'>Supplier is shorting out of the items you want!</p>";
+                                            }
+                                              ?>
+                                            
+
+                                            <!-- <p><a href="#" class="btn btn-primary mt-3">Pay with PayPal</a></p> -->
                                         </div>
                                        </div>
                                      
@@ -326,61 +383,7 @@
   <!-- container-scroller -->
   </div>
   
-  <div id="change-password" class="modal fade " role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title font-weight-400">ORDER INFO</h5>
-          <button type="button" class="close font-weight-400" data-dismiss="modal" aria-label="Close"> <span aria-hidden="true">&times;</span> </button>
-        </div>
-        <div class="modal-body p-4">
-
-          <table class="table ">
-                     
-                      <tbody>
-                        <tr>
-                          <th>Supplier Name</th>
-                          <td>KL Stationery</td>
-                        </tr>
-                        <tr>
-                          <th>Order Name</th>
-                          <td>PC Order 1</td>
-                        </tr>
-                        
-                        <tr>
-                          <th>Order Status</th>
-                          <td>Pending Payment</td>
-                        </tr>
-                     
-                        
-                        <tr>
-                          <th>Payment</th>
-                          <td><label class="badge badge-warning">Waiting Payment</label></td>
-                        </tr>
-                        <tr>
-                          <th>Quotation</th>
-                          <td><a href="#"><label class="badge badge-success">Download<i class="mdi mdi-download"></i></label></a></td>
-                        </tr>
-                        
-                         <tr>
-                          <th>Invoice</th>
-                          <td><a href="#"><label class="badge badge-success">Download<i class="mdi mdi-download"></i></label></a></td>
-                        </tr>
-                        <tr>
-                          <th>Date</th>
-                          <td>01-01-2021</td>
-                        </tr>
-                        
-                        <tr>
-                          <td><a href="#" class="btn btn-primary">PAY</a></td>
-                        </tr>
-                        
-                      </tbody>
-                    </table>
-        </div>
-      </div>
-    </div>
-  </div>
+ 
 
           <!--edit my profile-->
 <div class="modal fade" id="modalUser<?=$user_id?>" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -393,9 +396,36 @@
             </button>
           </div>
            <div class="modal-body p-4">
+            <div class="row">
+              <div class="col-12">
+                 <?php
+                 $btn = '';
+                  if ($getUser['img_url'] != '') {
+                    echo ' <img height="200px" width="200px" src="../images/'.$getUser['img_url'].'" alt="profile"/>';
+                    $btn = '<button id="btnPro" type="submit" class="btn btn-primary my-3"> Add Picture </button>';
+                  }else{
+                    $btn = '<button id="btnPro" type="submit" class="btn btn-primary my-3"> Change Picture </button>';
+                  }
+                ?>
 
+              </div>
+
+              <form enctype="multipart/form-data" id="profilePicForm" method="post">
+                 <div class="col-12 ">
+                   <input type="file" name="profFile" id="profFile" required class="form-control">
+                 </div>
+                 <input type="hidden" name="uidProf" id="uidProf" required="" value="<?=$user_id?>" >
+                  <div class="col-12 ">
+                    <?=$btn?>
+                  </div>
+
+              </form>
+             
+
+            </div>
             <form id="editUserProfileForm<?=$user_id?>" method="post">
               <div class="row">
+               
                 <div class="col-12 col-sm-6">
                   <div class="form-group">
                     <label for="firstName">Fullname</label>
@@ -434,7 +464,11 @@
         </div>
         </div>
       </div>
-    </div>
+</div>
+<form>
+  <input type="hidden" name="amount" id="amount" />
+  <input type="hidden" name="supplyID" id="supplyID" />
+</form id="finishPaymentForm" method="POST" style="display: none;">
   <!-- plugins:js -->
   <script src="../vendors/base/vendor.bundle.base.js"></script>
   <!-- endinject -->
@@ -456,7 +490,63 @@
     <script src="../js/select2.min.js"></script>
   <script src="../vendors/alertifyjs/alertify.min.js"></script>
   <script src="js/js.js"></script>
+  <script src="../js/js.js"></script>
+   <script
+    src="https://www.paypal.com/sdk/js?client-id=<?=$clientTokenPayPal['paypal_client_id']?>"> // Required. Replace YOUR_CLIENT_ID with your sandbox client ID.
+  </script>
+  <script>
+    function setAmount(amount,itemSupplyId){
+      $("#amount").val(amount);
+      $("#supplyID").val(itemSupplyId);
+    }
+
+  paypal.Buttons({
+    createOrder: function(data, actions) {
+      var amount =  $("#amount").val();
+      // alert(amount)
+      // This function sets up the details of the transaction, including the amount and line item details.
+      return actions.order.create({
+        purchase_units: [{
+          amount: {
+            value: amount
+          }
+        }]
+      });
+    },
+    onApprove: function(data, actions) {
+      // This function captures the funds from the transaction.
+      return actions.order.capture().then(function(details) {
+        // This function shows a transaction success message to your buyer.
+        // alert('Transaction completed by ' + details.payer.name.given_name);
+        alertify.success("Transaction completed, onr more thing, please wait!");
+        finishOrder();
+       
+      });
+    }
+  }).render('#paypal-button-container');
+  //This function displays Smart Payment Buttons on your web page.
+</script>
   <!-- End custom js for this page-->
+
+    <script type="text/javascript">
+       $(document).ready(function(){
+    var table = $('#user_tbl').DataTable({
+      columnDefs: [
+        {bSortable: false, targets: [2]} 
+      ] ,
+       "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+      dom: 'Bfrtip',
+      buttons: [
+          'colvis',
+          'csv',
+          'pdf'
+      ]
+
+
+    });
+});
+
+  </script>
 </body>
 
 </html>

@@ -337,3 +337,88 @@ $("#deleteItemForm").on('submit',function(e){
     e.preventDefault();
     e.stopImmediatePropagation();
 });
+
+
+//add paypal tokens
+$("#payDetails").on('submit',function(e){
+   var form_data = $(this).serialize();
+    var e_company_id = $("#e_company_id").val();
+    var client_id = $("#client_id").val();
+      
+    if(e_company_id !== '' && client_id !== ''){
+          $("#addUserBtn").html('<span class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true"></span> Saving...');
+           $.ajax({ //make ajax request to cart_process.php
+              url: "process/paypal_client_id.php",
+                  type: "POST",
+                  //dataType:"json", //expect json value from server
+                  data: form_data
+              }).done(function(dataResult){ //on Ajax success
+                console.log(dataResult);
+                $("#addUserBtn").html('Save');
+                var data = JSON.parse(dataResult);
+                
+                if(data.code == 1){
+                   alertify.success(data.msg);
+                   setTimeout(function(){
+                     location.reload();
+                   },800);
+                  
+                }else if(data.code == 2){
+                    alertify.error(data.msg);
+                }else{
+                  alertify.success("An error occured, try again later!");
+                }
+       
+           });
+
+        
+    }else{
+     alertify.error("All fields are required!");
+    }
+  
+ 
+    e.preventDefault();
+    e.stopImmediatePropagation();
+});
+
+
+function finishSubscription(){
+   //  $("#finishPaymentForm").on('submit',function(e){
+   // var form_data = $(this).serialize();
+
+   var plan_period = $("#plan_period").val();
+   var plan_company = $("#plan_company").val();
+   if (plan_period != "" && plan_company != "") {
+          $.ajax({ //make ajax request to cart_process.php
+          url: "process/finish_subscription.php",
+          type: "POST",
+          data: {'plan_company':plan_company,'plan_period':plan_period},
+          // contentType: false,
+          // cache: false,
+          // processData: false,
+          success:function(dataResult){ //on Ajax success
+            console.log(dataResult)
+            var data = JSON.parse(dataResult);
+            
+            if(data.code == 1){
+               alertify.success(data.msg);
+               setTimeout(function(){
+                 location.reload();
+               },800);
+              
+            }else if(data.code == 2){
+                alertify.error(data.msg);
+            }else{
+              alertify.success("An error occured, try again later!");
+            }
+   
+       }
+     })
+   }else{
+         alertify.success("Empty dataset, try again later!");
+   }
+
+//     e.preventDefault();
+//     e.stopImmediatePropagation();
+// });
+}
