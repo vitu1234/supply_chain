@@ -6,16 +6,29 @@
     header("Location:index.html");
   }
 
+
+  $per_page_record = 10;  // Number of entries to show in a page.   
+        // Look for a GET variable page if not found default is 1.        
+        if (isset($_GET["page"])) {    
+            $page  = $_GET["page"];    
+        }    
+        else {    
+          $page=1;    
+        }    
+    
+        $start_from = ($page-1) * $per_page_record;   
+
   $query_string = addslashes($_GET['query']);
   $sql = "SELECT * FROM `items` 
     INNER JOIN item_categories ON items.category_id = item_categories.category_id
     INNER JOIN companies ON items.company_id = companies.company_id
     WHERE items.item_name LIKE '%$query_string%' OR items.price LIKE '%$query_string%' OR 
-    item_categories.category_name LIKE '%$query_string%'
+    item_categories.category_name LIKE '%$query_string%' LIMIT $start_from, $per_page_record
   ";
 
   $countResults = $operation->countAll($sql);
   $getResults = $operation->retrieveMany($sql);
+
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +44,40 @@
     <link rel="stylesheet" href="user/vendors/alertifyjs/css/alertify.min.css" />
 <!-- include a theme -->
 <link rel="stylesheet" href="user/vendors/alertifyjs/css/themes/default.min.css" />
+<style>   
+    table {  
+        border-collapse: collapse;  
+    }  
+        .inline{   
+            display: inline-block;   
+            float: right;   
+            margin: 20px 0px;   
+        }   
+         
+        input, button{   
+            height: 34px;   
+        }   
+  
+    .pagination {   
+        display: inline-block;   
+    }   
+    .pagination a {   
+        font-weight:bold;   
+        font-size:18px;   
+        color: black;   
+        float: left;   
+        padding: 8px 16px;   
+        text-decoration: none;   
+        border:1px solid black;   
+    }   
+    .pagination a.active {   
+            background-color: pink;   
+    }   
+    .pagination a:hover:not(.active) {   
+        background-color: skyblue;   
+    }   
+        </style>   
+
 </head>
 <body>
 <div class="container">
@@ -106,7 +153,13 @@
                                               <tr>
                                                     <td>
                                                         <div class="widget-26-job-emp-img">
-                                                            <img width="311px" height="315px" src="user/images/logo.svg" alt="Company" />
+                                                              <?php
+                                        if ($row['img_url'] != '') {
+                                            echo '<img class="img-responsive mb-4 mx-4" src="user/supplier/items/'.$row['img_url'].'" height="300px" width="300px"/>';
+                                        }else{
+                                            echo '<img class="img-responsive mb-4 mx-4" width="311px" height="315px" src="user/images/logo.svg" alt="Company" />';
+                                        }
+                                        ?>
                                                         </div>
                                                     </td>
                                                     <td>
@@ -144,22 +197,29 @@
                                       <button type="button" class="close font-weight-400" data-dismiss="modal" aria-label="Close"> <span aria-hidden="true">&times;</span> </button>
                                     </div>
                                     <div class="modal-body p-4">
+
                                       <div id="firstForm<?=$row['item_id']?>">
                                         <div class="row">
-                                 
+                                        <?php
+                                        if ($row['img_url'] != '') {
+                                            echo '<img class="img-responsive mb-4 mx-4" src="user/supplier/items/'.$row['img_url'].'" height="200px" width="200px"/>';
+                                        }else{
+                                            echo '<img class="img-responsive mb-4 mx-4" width="311px" height="315px" src="user/images/logo.svg" alt="Company" />';
+                                        }
+                                        ?>
                                           <div class="col-12">
                                             <div class="form-group">
-                                              <p class="form-control" data-bv-field="firstName"><?=$row['item_name']?> in <?=$row['category_name']?></p>
+                                              <p class="" data-bv-field="firstName"><?=$row['item_name']?> in <?=$row['category_name']?></p>
                                             </div>
                                           </div>
                                           <div class="col-12 col-sm-6">
-                                            <div class="form-group">
-                                              <p class="form-control" data-bv-field="fullName" >K <?=number_format($row['price'],2)?>/pcs</p>
+                                            <div class="">
+                                              <p class="" data-bv-field="fullName" >K <?=number_format($row['price'],2)?>/pcs</p>
                                             </div>
                                           </div>
                                           <div class="col-12 col-sm-6">
                                              <div class="form-group">
-                                              <p class="form-control" data-bv-field="fullName" ><?=$row['quantity_total']?> pieces remaining</p>
+                                              <p class="" data-bv-field="fullName" ><?=$row['quantity_total']?> pieces remaining</p>
                                             </div>
                                           </div>    
                                          <div class="col-12 col-sm-6">
@@ -243,7 +303,48 @@
                         </div>
                     </div>
                     <nav class="d-flex justify-content-center">
-                        <ul class="pagination pagination-base pagination-boxed pagination-square mb-0">
+                            <div class="pagination">
+                        <?php  
+                            $query = "SELECT * FROM `items` 
+    INNER JOIN item_categories ON items.category_id = item_categories.category_id
+    INNER JOIN companies ON items.company_id = companies.company_id
+    WHERE items.item_name LIKE '%$query_string%' OR items.price LIKE '%$query_string%' OR 
+    item_categories.category_name LIKE '%$query_string%'";  
+
+                            $rs_result = $operation->retrieveMany($query);     
+                            $row = $operation->retrieveSingle($query);     
+                            $total_records = $operation->countAll($query);     
+
+                               // Number of pages required.   
+        $total_pages = ceil($total_records / $per_page_record);     
+        $pagLink = "";       
+      
+        if($page>=2){   
+            echo "<a href='search_results.php?query=".$query_string."&&page=".($page-1)."'>  Prev </a>";   
+        }       
+                   
+        for ($i=1; $i<=$total_pages; $i++) {   
+          if ($i == $page) {   
+              $pagLink .= "<a class = 'active' href='search_results.php?query=".$query_string."&&page="  
+                                                .$i."'>".$i." </a>";   
+          }               
+          else  {   
+              $pagLink .= "<a href='search_results.php?query=".$query_string."&&page=".$i."'>   
+                                                ".$i." </a>";     
+          }   
+        };     
+        echo $pagLink;   
+  
+        if($page<$total_pages){   
+            echo "<a href='search_results.php?query=".$query_string."&&page=".($page+1)."'>  Next </a>";   
+        }   
+  
+                        ?>
+
+                            </div>
+
+
+                       <!--  <ul class="pagination pagination-base pagination-boxed pagination-square mb-0">
                             <li class="page-item">
                                 <a class="page-link no-border" href="#">
                                     <span aria-hidden="true">«</span>
@@ -260,7 +361,7 @@
                                     <span class="sr-only">Next</span>
                                 </a>
                             </li>
-                        </ul>
+                        </ul> -->
                     </nav>
                 </div>
             </div>
